@@ -5,27 +5,27 @@
 set -e
 
 config_deleted() {
-
+    echo "config_deleted $@"
 }
 
 config_changed() {
-
+    echo "config_changed $@"
 }
 
 config_created() {
-
+    echo "config_created $@"
 }
 
 cert_deleted() {
-
+    echo "cert_deleted $@"
 }
 
 cert_changed() {
-
+    echo "cert_changed $@"
 }
 
 cert_created() {
-
+    echo "cert_created $@"
 }
 
 secret_created() {
