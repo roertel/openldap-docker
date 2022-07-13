@@ -1,22 +1,35 @@
 #!/usr/bin/env sh
+set -e
 
-# Load secrets into environment variables
-echo "Reading secrets..."
-while read FILE; do
-    echo "Reading $FILE"
-    export LDAP_$FILE=$(slappasswd -n -h "{SSHA512}" -o module-load=pw-sha2.la -T /ldap/secrets/$FILE)
-done < <(ls -1 /ldap/secrets)
-echo "done"
+# Set up some dirs, using existing vars if specified
+BASEDIR="${BASEDIR:-/ldap}"              # Base directory
+LDAPDIR="${BASEDIR:-${BASEDIR}/slapd.d}" # LDAP database directory
+SECRETS="${BASEDIR:-${BASEDIR}/secrets}" # Secrets to inject into scripts, TLS, etc
+INITDIR="${BASEDIR:-${BASEDIR}/init}"    # Directory for one-time initialization of ldap
+LDIFDIR="${BASEDIR:-${BASEDIR}/config}"  # Directory to watch for changes to apply
+CERTDIR="${BASEDIR:-${BASEDIR}/tls}"     # Directory to watch for changes to certificates
 
-# Load configuration items
-mkdir -p /ldap/slapd.d
+if [ ! -d "${LDAPDIR}" ]; then
+    mkdir -p "${LDAPDIR}"
 
-echo "Loading configuration files..."
-while read FILE; do
-    echo "Loading $FILE"
-    envsubst < /ldap/config/$FILE | slapadd -n0 -F /ldap/slapd.d
-done < <(ls -1 /ldap/config)
-echo "done"
+    # Load secrets into environment variables
+    echo "Reading secrets..."
+    for FILE in "${SECRETS}/*"; do
+        echo "Reading $FILE"
+        BASE=$(basename $FILE)
+        export LDAP_$BASE=$(slappasswd -n -h "{SSHA512}" -o module-load=pw-sha2.la -T $FILE)
+    done; echo "done"
+
+    # Load initialization items
+    echo "Loading configuration files..."
+    for FILE in "${INITDIR}/*"; do
+        echo "Loading $FILE"
+        envsubst < $FILE | slapadd -n0 -F "${LDAPDIR}"
+    done; echo "done"
+fi
+
+echo "Starting config watcher"
+/usr/local/bin/ldif_watch "${SECRETDIR}" "${LDIFDIR}" "${CERTDIR}"
 
 echo "Starting LDAP server"
-/usr/sbin/slapd "$@"
+/usr/sbin/slapd -F "${LDAPDIR}" "$@"

@@ -2,6 +2,7 @@
 #
 # watches a directory for changes, then runs the LDIF against the local LDAP
 #
+set -e
 
 config_deleted() {
 
@@ -39,28 +40,28 @@ secret_deleted() {
     unset $2
 }
 
-inotifywait -qmre modify,delete,create $1 \
-| while read DIRECTORY EVENT FILE; do
+echo "[$0] Watching for changes in $@"
+while read DIRECTORY EVENT FILE; do
     case $DIRECTORY in
-        "$1/secrets/")
+        "*/secrets/")
             case $EVENT in
                 MODIFY*) secret_changed "$DIRECTORY" "$FILE" ;;
                 CREATE*) secret_created "$DIRECTORY" "$FILE" ;;
                 DELETE*) secret_deleted "$DIRECTORY" "$FILE" ;;
             esac
             ;;
-        "$1/tls/")
+        "*/tls/")
             case $EVENT in
                 MODIFY*) cert_changed "$DIRECTORY" "$FILE" ;;
                 CREATE*) cert_created "$DIRECTORY" "$FILE" ;;
                 DELETE*) cert_deleted "$DIRECTORY" "$FILE" ;;
             esac
             ;;
-        "$1/config/")
+        "*/config/")
             case $EVENT in
                 MODIFY*) file_changed "$DIRECTORY" "$FILE" ;;
                 CREATE*) file_created "$DIRECTORY" "$FILE" ;;
                 DELETE*) file_deleted "$DIRECTORY" "$FILE" ;;
             esac
             ;;
-done
+done < <(inotifywait -qmre modify,delete,create "$@")
