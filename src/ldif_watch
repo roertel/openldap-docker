@@ -40,6 +40,11 @@ secret_deleted() {
     unset $2
 }
 
+if [ $# -eq 0 ]; then
+    echo "[$0] Please specify a list of directories to watch"
+    exit 1
+fi
+
 echo "[$0] Watching for changes in $@"
 while read DIRECTORY EVENT FILE; do
     case $DIRECTORY in
@@ -64,4 +69,5 @@ while read DIRECTORY EVENT FILE; do
                 DELETE*) file_deleted "$DIRECTORY" "$FILE" ;;
             esac
             ;;
+    esac
 done < <(inotifywait -qmre modify,delete,create "$@")
