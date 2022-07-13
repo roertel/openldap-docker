@@ -2,21 +2,21 @@
 
 # Load secrets into environment variables
 echo "Reading secrets..."
-ls -1 /ldap/secrets \
-| while read FILE; do
+while read FILE; do
     echo "Reading $FILE"
     export LDAP_$FILE=$(slappasswd -n -h "{SSHA512}" -o module-load=pw-sha2.la -T /ldap/secrets/$FILE)
-done; echo "done"
+done < <(ls -1 /ldap/secrets)
+echo "done"
 
 # Load configuration items
 mkdir -p /ldap/slapd.d
 
 echo "Loading configuration files..."
-ls -1 /ldap/config \
-| while read FILE; do
+while read FILE; do
     echo "Loading $FILE"
     envsubst < /ldap/config/$FILE | slapadd -n0 -F /ldap/slapd.d
-done; echo "done"
+done < <(ls -1 /ldap/config)
+echo "done"
 
 echo "Starting LDAP server"
 /usr/sbin/slapd "$@"
