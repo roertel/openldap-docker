@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e
+set -ex
 shopt -s nullglob  # Fixes a case when a directory is empty
 
 # Set up some dirs, using existing vars if specified
@@ -9,34 +9,42 @@ SECRETS="${SECRETS:-${BASEDIR}/secrets}" # Secrets to inject into scripts, TLS, 
 INITDIR="${INITDIR:-${BASEDIR}/init}"    # Directory for one-time initialization of ldap
 LDIFDIR="${LDIFDIR:-${BASEDIR}/config}"  # Directory to watch for changes to apply
 CERTDIR="${CERTDIR:-${BASEDIR}/tls}"     # Directory to watch for changes to certificates
-
+RUN_DIR="${RUN_DIR:-${BASEDIR}/run}"     # Run dir (pid files, sockets, etc)
 LOGNAME=$(basename $0)
 
 write_log() {
     echo "[${LOGNAME}] $@"
 }
 
-if [ ! -d "${LDAPDIR}" ]; then
+mkdir -p "${RUN_DIR}"
+
+# Load secrets into environment variables
+write_log "Reading secrets..."
+for FILE in "${SECRETS}"/*; do
+    if [ -f "${FILE}" ]; then
+        write_log "Reading $FILE"
+        BASE=$(basename $FILE)
+        export LDAP_$BASE=$(slappasswd -n -h "{SSHA512}" -o module-load=pw-sha2.la -T $FILE)
+    fi
+done; write_log "secrets done"
+
+if [ -z "$(ls -A ${LDAPDIR})" ]; then
     mkdir -p "${LDAPDIR}"
 
-    # Load secrets into environment variables
-    write_log "Reading secrets..."
-    for FILE in "${SECRETS}/*"; do
-        if [ -f "${FILE}" ]; then
-            write_log "Reading $FILE"
-            BASE=$(basename $FILE)
-            export LDAP_$BASE=$(slappasswd -n -h "{SSHA512}" -o module-load=pw-sha2.la -T $FILE)
-        fi
-    done; write_log "done"
-
     # Load initialization items
-    write_log "Loading configuration files..."
-    for FILE in "${INITDIR}/*"; do
+    write_log "Loading initialization files..."
+    for FILE in "${INITDIR}"/*; do
         if [ -f "${FILE}" ]; then
             write_log "Loading $FILE"
             envsubst < $FILE | slapadd -n0 -F "${LDAPDIR}"
+
+        echo
+            write_log "Skipping $FILE"
         fi
-    done; write_log "done"
+    done; write_log "initialization done"
+
+else
+    write_log "Skipping initialization; Already configured"
 fi
 
 write_log "Starting config watcher"
