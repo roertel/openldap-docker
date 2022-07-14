@@ -1,8 +1,14 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 #
 # watches a directory for changes, then runs the LDIF against the local LDAP
 #
 set -e
+
+LOGNAME=$(basename $0)
+
+write_log() {
+    echo "[${LOGNAME}] $@"
+}
 
 config_deleted() {
     echo "config_deleted $@"
@@ -40,12 +46,24 @@ secret_deleted() {
     unset $2
 }
 
-if [ $# -eq 0 ]; then
-    echo "[$0] Please specify a list of directories to watch"
+
+# Only watch directories & files
+WATCH=()
+for F in "$@"; do
+    if [ -d "${F}" -o -f "${F}" ]; then
+        WATCH+=("${F}")
+    else
+        write_log "${F} is not a directory or a file, removing from watch list"
+    fi
+done
+
+# Sanity check
+if [ ${#WATCH[@]} -eq 0 ]; then
+    write_log "Please specify a list of directories to watch"
     exit 1
 fi
 
-echo "[$0] Watching for changes in $@"
+write_log "Watching for changes in ${WATCH[*]}"
 while read DIRECTORY EVENT FILE; do
     case $DIRECTORY in
         "*/secrets/")
@@ -70,4 +88,4 @@ while read DIRECTORY EVENT FILE; do
             esac
             ;;
     esac
-done < <(inotifywait -qmre modify,delete,create "$@")
+done < <(inotifywait -qmre modify,delete,create ${WATCH[*]})
