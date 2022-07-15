@@ -28,7 +28,7 @@ for FILE in "${SECRETS}"/*; do
     fi
 done; write_log "secrets done"
 
-if [ -z "$(ls -A ${LDAPDIR})" ]; then
+if [ -z "$(ls -A ${LDAPDIR} > /dev/null 2>&1)" ]; then
     mkdir -p "${LDAPDIR}"
 
     # Load initialization items
