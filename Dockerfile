@@ -13,6 +13,7 @@ RUN mkdir -p "/ldap" \
  && ln -s /usr/local/bin/init /entrypoint \
  && echo "done"
 
+ENV HOME /ldap
 USER openldap
 
 ENTRYPOINT ["/entrypoint"]

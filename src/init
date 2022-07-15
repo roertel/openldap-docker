@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -ex
+set -e
 shopt -s nullglob  # Fixes a case when a directory is empty
 
 # Set up some dirs, using existing vars if specified
@@ -51,4 +51,4 @@ write_log "Starting config watcher"
 ldif_watch "${SECRETS}" "${LDIFDIR}" "${CERTDIR}" &
 
 write_log "Starting LDAP server"
-exec /usr/sbin/slapd -F "${LDAPDIR}" "$@"
+exec /usr/sbin/slapd -F "${LDAPDIR}" -h "ldapi://%2fldap%2frun%2fslapd.sock" "$@"
