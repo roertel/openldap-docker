@@ -38,7 +38,7 @@ if [ -z "$(ls -A ${LDAPDIR})" ]; then
             write_log "Loading $FILE"
             envsubst < $FILE | slapadd -n0 -F "${LDAPDIR}"
 
-        echo
+        else
             write_log "Skipping $FILE"
         fi
     done; write_log "initialization done"
