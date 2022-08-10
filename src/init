@@ -6,14 +6,13 @@ shopt -s nullglob  # Fixes a case when a directory is empty
 BASEDIR="${BASEDIR:-/ldap}"              # Base directory
 LDAPDIR="${LDAPDIR:-${BASEDIR}/slapd.d}" # LDAP database directory
 SECRETS="${SECRETS:-${BASEDIR}/secrets}" # Secrets to inject into scripts, TLS, etc
-INITDIR="${INITDIR:-${BASEDIR}/init}"    # Directory for one-time initialization of ldap
-LDIFDIR="${LDIFDIR:-${BASEDIR}/config}"  # Directory to watch for changes to apply
+LDIFDIR="${LDIFDIR:-${BASEDIR}/config}"  # Directory for LDAP DB configuration
 CERTDIR="${CERTDIR:-${BASEDIR}/tls}"     # Directory to watch for changes to certificates
 RUN_DIR="${RUN_DIR:-${BASEDIR}/run}"     # Run dir (pid files, sockets, etc)
 LOGNAME=$(basename $0)
 
 write_log() {
-    echo "[${LOGNAME}] $@"
+   echo "[${LOGNAME}] $@"
 }
 
 mkdir -p "${RUN_DIR}"
@@ -21,34 +20,41 @@ mkdir -p "${RUN_DIR}"
 # Load secrets into environment variables
 write_log "Reading secrets..."
 for FILE in "${SECRETS}"/*; do
-    if [ -f "${FILE}" ]; then
-        write_log "Reading $FILE"
-        BASE=$(basename $FILE)
-        export LDAP_$BASE=$(slappasswd -n -h "{SSHA512}" -o module-load=pw-sha2.la -T $FILE)
-    fi
+   if [ -f "${FILE}" ]; then
+      write_log "Reading $FILE"
+      BASE=$(basename $FILE)
+      export LDAP_$BASE=$(slappasswd -n -h "{SSHA512}" -o module-load=pw-sha2.la -T $FILE)
+   fi
 done; write_log "secrets done"
 
 if [ -z "$(ls -A ${LDAPDIR} 2>/dev/null)" ]; then
-    mkdir -p "${LDAPDIR}"
+   mkdir -p "${LDAPDIR}"
 
-    # Load initialization items
-    write_log "Loading initialization files..."
-    for FILE in "${INITDIR}"/*; do
-        if [ -f "${FILE}" ]; then
-            write_log "Loading $FILE"
-            envsubst < $FILE | slapadd -n0 -F "${LDAPDIR}"
+   # Load initialization items
+   write_log "Loading initialization files..."
+   if [ -f "${LDIFDIR}/pre-init.ldif" ]; then
+      write_log "Loading $FILE"
+      envsubst < $FILE | slapadd -n0 -F "${LDAPDIR}"
 
-        else
-            write_log "Skipping $FILE"
-        fi
-    done; write_log "initialization done"
+   else
+      write_log "Skipping $FILE"
+   fi
+
+   if [ -f "${LDIFDIR}/base.ldif" ]; then
+      write_log "Loading $FILE"
+      envsubst < $FILE | ldapadd
+
+   else
+      write_log "Skipping $FILE"
+   fi
+   write_log "initialization done"
 
 else
-    write_log "Skipping initialization; Already configured"
+   write_log "Skipping initialization; Already configured"
 fi
 
 write_log "Starting config watcher"
-ldif_watch "${SECRETS}" "${LDIFDIR}" "${CERTDIR}" &
+ldif_watch "${SECRETS}" "${LDIFDIR}/config.ldif" "${CERTDIR}" &
 
 write_log "Starting LDAP server"
 exec /usr/sbin/slapd -F "${LDAPDIR}" -h "ldapi://%2fldap%2frun%2fslapd.sock" "$@"
