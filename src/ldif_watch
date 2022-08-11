@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+#
+# watches a directory for changes, then runs the LDIF against the local LDAP
+#
+set -e
+
+LOGNAME=$(basename $0)
+LDAPSASL_MECH=EXTERNAL
+ADMINPW=/ldap/secrets/admin
+
+write_log() {
+   echo "[${LOGNAME}] $@"
+}
+
+config_deleted() {
+   echo "config_deleted $@"
+}
+
+config_changed() {
+   echo "config_changed $@"
+   envsubst<$2|ldapadd -vy "${ADMINPW}"
+}
+
+config_created() {
+   echo "config_created $@"
+   envsubst<$2|ldapadd -vy "${ADMINPW}"
+}
+
+cert_deleted() {
+   echo "cert_deleted $@"
+}
+
+cert_changed() {
+   echo "cert_changed $@"
+}
+
+cert_created() {
+   echo "cert_created $@"
+}
+
+secret_created() {
+   export FILE=$(cat "$1/$2")
+}
+
+secret_changed() {
+   secret_created "$@"
+}
+
+secret_deleted() {
+   unset $2
+}
+
+
+# Only watch directories & files
+WATCH=()
+for F in "$@"; do
+   if [ -d "${F}" -o -f "${F}" ]; then
+      WATCH+=("${F}")
+   else
+      write_log "${F} is not a directory or a file, removing from watch list"
+   fi
+done
+
+# Sanity check
+if [ ${#WATCH[@]} -eq 0 ]; then
+   write_log "Please specify a list of directories to watch"
+   exit 1
+fi
+
+write_log "Watching for changes in ${WATCH[*]}"
+while read DIRECTORY EVENT FILE; do
+   case $DIRECTORY in
+      "*/secrets/")
+         case $EVENT in
+            MODIFY*) secret_changed "$DIRECTORY" "$FILE" ;;
+            CREATE*) secret_created "$DIRECTORY" "$FILE" ;;
+            DELETE*) secret_deleted "$DIRECTORY" "$FILE" ;;
+         esac
+         ;;
+      "*/tls/")
+         case $EVENT in
+            MODIFY*) cert_changed "$DIRECTORY" "$FILE" ;;
+            CREATE*) cert_created "$DIRECTORY" "$FILE" ;;
+            DELETE*) cert_deleted "$DIRECTORY" "$FILE" ;;
+         esac
+         ;;
+      "*/config/")
+         case $EVENT in
+            MODIFY*) file_changed "$DIRECTORY" "$FILE" ;;
+            CREATE*) file_created "$DIRECTORY" "$FILE" ;;
+            DELETE*) file_deleted "$DIRECTORY" "$FILE" ;;
+         esac
+         ;;
+   esac
+done < <(inotifywait -qmre modify,delete,create ${WATCH[*]})
