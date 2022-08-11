@@ -1,0 +1,25 @@
+name: Docker Build
+
+on:
+  push:
+    branches: [ "main" ]
+    
+  pull_request:
+    branches: [ "main" ]
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@master
+      
+      - name: Kaniko build
+        uses: aevea/action-kaniko@master
+        with:
+          image: aevea/kaniko
+          cache: true
+          cache_registry: aevea/cache
+          extra_args: --no-push
