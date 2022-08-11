@@ -57,7 +57,7 @@ for F in "$@"; do
    if [ -d "${F}" -o -f "${F}" ]; then
       WATCH+=("${F}")
    else
-      write_log "${F} is not a directory or a file, removing from watch list"
+      write_log "Warning: ${F} is not a directory or a file, removing from watch list"
    fi
 done
 
