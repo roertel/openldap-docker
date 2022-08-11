@@ -46,5 +46,5 @@ write_log "Starting config watcher"
 ldif_watch "${SECRETS}" "${LDIFDIR}/config.ldif" "${CERTDIR}" &
 
 write_log "Starting LDAP server"
-exec /usr/sbin/slapd -F"${LDAPDIR}" -h"ldapi://%2fldap%2frun%2fslapd.sock" "$@"
+exec /usr/sbin/slapd -F"${LDAPDIR}" -d"${LDAP_DEBUG:-1}" -h"ldapi://%2fldap%2frun%2fslapd.sock" "$@"
 
