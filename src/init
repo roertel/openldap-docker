@@ -19,7 +19,7 @@ mkdir -p "${RUN_DIR}"
 
 # Load secrets into environment variables
 write_log "Reading secrets..."
-for FILE in "${SECRETS}/*"; do
+for FILE in "${SECRETS}"/*; do
    if [ -f "${FILE}" ]; then
       write_log "Reading $FILE"
       BASE=$(basename $FILE)
@@ -32,7 +32,7 @@ if [ -z "$(ls -A ${LDAPDIR} 2>/dev/null)" ]; then
 
    # Load initialization items
    write_log "Loading initialization files..."
-   for FILE in "${LDIFDIR}/init*.ldif"; do
+   for FILE in "${LDIFDIR}"/init*.ldif; do
       write_log "Loading $FILE"
       envsubst < "${FILE}" | slapadd -n0 -F "${LDAPDIR}"
 
