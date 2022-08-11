@@ -22,4 +22,6 @@ jobs:
           image: aevea/kaniko
           cache: true
           cache_registry: aevea/cache
+          username: FAKE_USER_BUILD_ONLY
+          password: FAKE_PASS_BUILD_ONLY
           extra_args: --no-push
