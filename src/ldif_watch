@@ -95,4 +95,3 @@ while read DIRECTORY EVENT FILE; do
          ;;
    esac
 done < <(inotifywait -qmre modify,delete,create ${WATCH[*]})
-
