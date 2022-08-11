@@ -13,29 +13,29 @@ write_log() {
 }
 
 config_deleted() {
-   echo "config_deleted $@"
+   write_log "config_deleted $@"
 }
 
 config_changed() {
-   echo "config_changed $@"
-   envsubst<$2|ldapadd -vy "${ADMINPW}"
+   write_log "config_changed $@"
+   envsubst < $2 | ldapadd
 }
 
 config_created() {
-   echo "config_created $@"
-   envsubst<$2|ldapadd -vy "${ADMINPW}"
+   write_log "config_created $@"
+   envsubst < $2 | ldapadd
 }
 
 cert_deleted() {
-   echo "cert_deleted $@"
+   write_log "cert_deleted $@"
 }
 
 cert_changed() {
-   echo "cert_changed $@"
+   write_log "cert_changed $@"
 }
 
 cert_created() {
-   echo "cert_created $@"
+   write_log "cert_created $@"
 }
 
 secret_created() {
@@ -67,6 +67,8 @@ if [ ${#WATCH[@]} -eq 0 ]; then
    exit 1
 fi
 
+sleep 10  # Hack to ensure slapd is started before watching for changed files
+
 write_log "Watching for changes in ${WATCH[*]}"
 while read DIRECTORY EVENT FILE; do
    case $DIRECTORY in
@@ -86,10 +88,11 @@ while read DIRECTORY EVENT FILE; do
          ;;
       "*/config/")
          case $EVENT in
-            MODIFY*) file_changed "$DIRECTORY" "$FILE" ;;
-            CREATE*) file_created "$DIRECTORY" "$FILE" ;;
-            DELETE*) file_deleted "$DIRECTORY" "$FILE" ;;
+            MODIFY*) config_changed "$DIRECTORY" "$FILE" ;;
+            CREATE*) config_created "$DIRECTORY" "$FILE" ;;
+            DELETE*) config_deleted "$DIRECTORY" "$FILE" ;;
          esac
          ;;
    esac
 done < <(inotifywait -qmre modify,delete,create ${WATCH[*]})
+
