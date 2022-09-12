@@ -15,6 +15,11 @@ write_log() {
    echo "[${LOGNAME}] $@"
 }
 
+if [[ ${LDAP_DEBUG} == ?(-)+([0-9]) ]]; then
+   write_log "'$LDAP_DEBUG' is not a number, defaulting to 1"
+   LDAP_DEBUG=1
+fi
+
 mkdir -p "${RUN_DIR}"
 
 # Load secrets into environment variables
@@ -45,6 +50,8 @@ fi
 write_log "Starting config watcher"
 ldif_watch "${SECRETS}" "${LDIFDIR}/config.ldif" "${CERTDIR}" &
 
+sleep 5
 write_log "Starting LDAP server"
-exec /usr/sbin/slapd -F "${LDAPDIR}" -d "${LDAP_DEBUG:-1}" -h "${LDAPURI}" "$@"
+exec /usr/sbin/slapd -F "${LDAPDIR}" -d "${LDAP_DEBUG}" -h "${LDAPURI}" "$@"
+write_log "LDAP terminated with result code $?"
 
