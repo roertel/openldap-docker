@@ -52,6 +52,6 @@ ldif_watch "${SECRETS}" "${LDIFDIR}/config.ldif" "${CERTDIR}" &
 
 sleep 5
 write_log "Starting LDAP server"
-exec /usr/sbin/slapd -F "${LDAPDIR}" -d "${LDAP_DEBUG}" "$@"
+exec /usr/sbin/slapd -F "${LDAPDIR}" -d "${LDAP_DEBUG}" -h "${LDAPURI}" "$@"
 write_log "LDAP terminated with result code $?"
 
