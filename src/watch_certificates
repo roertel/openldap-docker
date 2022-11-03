@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+#
+# watches a directory for changes, then updates the certificate.
+#
+set -e
+
+LOGNAME=$(basename $0)
+LDAPSASL_MECH=EXTERNAL
+ADMINPW=/ldap/secrets/admin
+
+write_log() {
+   echo "[${LOGNAME}] $@"
+}
+
+cert_deleted() {
+   write_log "cert deleted $@"
+}
+
+cert_changed() {
+   write_log "cert changed $@"
+}
+
+cert_created() {
+   write_log "cert created $@"
+}
+
+# Only watch directories & files
+WATCH=()
+for F in "$@"; do
+   if [ -d "${F}" -o -f "${F}" ]; then
+      WATCH+=("${F}")
+   else
+      write_log "Warning: ${F} is not a directory or a file, removing from watch list"
+   fi
+done
+
+# Sanity check
+if [ ${#WATCH[@]} -eq 0 ]; then
+   write_log "Please specify a list of directories to watch"
+   exit 1
+fi
+
+sleep 10  # Hack to ensure slapd is running before watching for changed files
+
+write_log "Watching for changes in ${WATCH[*]}"
+while read DIRECTORY EVENT FILE; do
+   case $EVENT in
+      MODIFY*) cert_changed "$DIRECTORY" "$FILE" ;;
+      CREATE*) cert_created "$DIRECTORY" "$FILE" ;;
+      DELETE*) cert_deleted "$DIRECTORY" "$FILE" ;;
+   esac
+done < <(inotifywait -qmre modify,delete,create ${WATCH[*]})
+
+write_log "script exited: rc=$!"

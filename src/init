@@ -47,11 +47,11 @@ else
    write_log "Skipping initialization; Already configured"
 fi
 
-write_log "Starting config watcher"
-ldif_watch "${SECRETS}" "${LDIFDIR}/config.ldif" "${CERTDIR}" &
+write_log "Starting config watchers"
+watch_secrets "${SECRETS}"
+watch_ldif "${LDIFDIR}"
+watch_certificates "${CERTDIR}"
 
-sleep 5
 write_log "Starting LDAP server"
 exec /usr/sbin/slapd -F "${LDAPDIR}" -d "${LDAP_DEBUG}" -h "${LDAPURI}" "$@"
 write_log "LDAP terminated with result code $?"
-

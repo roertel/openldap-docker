@@ -1,0 +1,62 @@
+---
+# File will be piped through envsubst
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kaniko-build
+spec:
+  ttlSecondsAfterFinished: 600
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      volumes:
+        - name: certs
+          emptyDir: {}
+        - name: source
+          emptyDir: {}
+      containers:
+        # Need the cert-bootstrapper container to load certs to be used
+        # to push the image to the local registry.
+        - name: cert-bootstrapper
+          image: cr.step.sm/smallstep/autocert-bootstrapper:latest
+          volumeMounts:
+            - name: certs
+              mountPath: /var/run/autocert.step.sm
+          env:
+            - name: CLUSTER_DOMAIN
+              value: ${CLUSTER_DOMAIN}
+            - name: COMMON_NAME
+              value: kaniko-build.local
+            - name: NAMESPACE
+              value: ${NAMESPACE}
+            - name: POD_NAME
+              value: kaniko-build
+            - name: STEP_CA_URL
+              value: ${CA_URL}
+            - name: STEP_FINGERPRINT
+              value: ${CA_FINGERPRINT}
+            - name: STEP_NOT_AFTER
+              value: 5m
+
+        - name: git
+          image: bitnami/git:latest
+          volumeMounts:
+            - mountPath: /workspace
+              name: source
+          command: ["sh", "-c"]
+          args:
+            - |
+              ssh-keyscan test-git.int.oertelnet.com>/etc/ssh/ssh_known_hosts &&
+              git clone -v ${SOURCE} /workspace
+
+        - name: kaniko
+          image: gcr.io/kaniko-project/executor:latest
+          volumeMounts:
+            - name: source
+              mountPath: /workspace
+            - name: certs
+              mountPath: /var/run/autocert.step.sm
+          args:
+            - --destination=${REGISTRY}/${CONTAINER}
+            - --registry-certificate=${REGISTRY}=/var/run/autocert.step.sm/root.crt
