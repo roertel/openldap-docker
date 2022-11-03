@@ -12,5 +12,5 @@ build: export REGISTRY=test-docker-registry.int.oertelnet.com
 build: export CONTAINER=openldap:latest
 build:
 	envsubst<kaniko-build.yaml|kubectl apply -f -
-	#kubectl wait --for=condition=active job/kaniko-build
-	#kubectl logs job/kaniko-build -f kaniko
+	kubectl wait --for=condition=complete job/kaniko-build --timeout=120s
+	kubectl logs job/kaniko-build -f kaniko
