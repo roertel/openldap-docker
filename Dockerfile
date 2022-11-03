@@ -2,7 +2,8 @@ FROM debian:stable-slim
 
 RUN apt-get -yqq update \
  && DEBIAN_FRONTEND=noninteractive apt-get -yqq --no-install-recommends \
-    install slapd ldap-utils gettext-base inotify-tools vim-tiny
+    install slapd ldap-utils gettext-base inotify-tools vim-tiny \
+ && rm -rf /var/log/apt /var/log/*.log /var/cache/apt /var/cache/debconf
 
 COPY src/* /usr/local/bin/
 
