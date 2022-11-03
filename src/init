@@ -49,5 +49,6 @@ watch_ldif "${LDIFDIR}" &
 watch_certificates "${CERTDIR}" &
 
 write_log "Starting LDAP server"
+write_log "Listening on ${LDAPURI}"
 exec /usr/sbin/slapd -F "${LDAPDIR}" -d "${LDAP_DEBUG}" -h "${LDAPURI}" "$@"
 write_log "LDAP terminated with result code $?"
