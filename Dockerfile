@@ -12,6 +12,7 @@ RUN mkdir -p "/ldap" \
  && chmod 0700 /ldap \
  && chmod +x /usr/local/bin/* \
  && ln -s /usr/local/bin/init /entrypoint \
+ && ln -s /usr/local/bin/healthz /healthz \
  && echo "done"
 
 ENV HOME /ldap
