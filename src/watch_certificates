@@ -15,7 +15,6 @@ write_log() {
 
 get_attr() {
    ATTR=$1
-   write_log "Fetching ${ATTR}"
    ldapsearch -LLLb "cn=config" -s base "${ATTR}" -z 1 2>&1 \
    | grep "${ATTR}" | cut -f2 -d' '
 }
@@ -36,19 +35,19 @@ while sleep 1m; do
    CA_FILE=$(get_attr "olcTLSCACertificateFile")
    if [ ! -f "${CA_FILE}" ]; then
       write_log "Certificate CA file missing: ${CA_FILE}"
-      next
+      continue
    fi
 
    CRTFILE=$(get_attr "olcTLSCertificateFile")
    if [ ! -f "${CRTFILE}" ]; then
       write_log "Certificate file missing: ${CRTFILE}"
-      next
+      continue
    fi
 
    KEYFILE=$(get_attr "olcTLSCertificateKeyFile")
    if [ ! -f "${KEYFILE}" ]; then
       write_log "Certificate key file missing: ${KEYFILE}"
-      next
+      continue
    fi
 
    # check expiry
