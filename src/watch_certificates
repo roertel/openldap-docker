@@ -7,7 +7,7 @@ set -e
 LOGNAME=$(basename $0)
 LDAPSASL_MECH=EXTERNAL
 ADMINPW=/ldap/secrets/admin
-RENEWTIME=3300  # How many seconds before expiration to start watching for renwal
+RENEWTIME="${RENEWTIME:-3300}"  # How many seconds before expiration to start watching for renwal
 
 write_log() {
    echo "[${LOGNAME}] $@"
@@ -33,19 +33,19 @@ EOF
 }
 
 while sleep 1m; do
-   CA_FILE=get_attr olcTLSCACertificateFile
+   CA_FILE=get_attr "olcTLSCACertificateFile"
    if [ ! -f "${CA_FILE}" ]; then
       write_log "Certificate CA file missing: ${CA_FILE}"
       next
    fi
 
-   CRTFILE=get_attr olcTLSCertificateFile
+   CRTFILE=get_attr "olcTLSCertificateFile"
    if [ ! -f "${CRTFILE}" ]; then
       write_log "Certificate file missing: ${CRTFILE}"
       next
    fi
 
-   KEYFILE=get_attr olcTLSCertificateKeyFile
+   KEYFILE=get_attr "olcTLSCertificateKeyFile"
    if [ ! -f "${KEYFILE}" ]; then
       write_log "Certificate key file missing: ${KEYFILE}"
       next
@@ -65,9 +65,9 @@ while sleep 1m; do
    done
 
    write_log "Certificate has been renewed"
-   set_attr olcTLSCACertificateFile: "${CA_FILE}"
-   set_attr olcTLSCertificateFile: "${CRTFILE}"
-   set_attr olcTLSCertificateKeyFile: "${KEYFILE}"
+   set_attr "olcTLSCACertificateFile" "${CA_FILE}"
+   set_attr "olcTLSCertificateFile" "${CRTFILE}"
+   set_attr "olcTLSCertificateKeyFile" "${KEYFILE}"
 done
 
 write_log "script exited: rc=$!"
