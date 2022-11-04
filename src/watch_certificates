@@ -1,54 +1,73 @@
 #!/usr/bin/env bash
 #
-# watches a directory for changes, then updates the certificate.
+# Updates certificates when they're renewed. 
 #
 set -e
 
 LOGNAME=$(basename $0)
 LDAPSASL_MECH=EXTERNAL
 ADMINPW=/ldap/secrets/admin
+RENEWTIME=3300  # How many seconds before expiration to start watching for renwal
 
 write_log() {
    echo "[${LOGNAME}] $@"
 }
 
-cert_deleted() {
-   write_log "cert deleted $@"
+get_attr() {
+   ATTR=$1
+   write_log "Fetching ${ATTR}"
+   ldapsearch -LLLb "cn=config" -s base "${ATTR}" -z 1 2>&1 \
+   | grep "${ATTR}" | cut -f2 -d' '
 }
 
-cert_changed() {
-   write_log "cert changed $@"
+set_attr() {
+   ATTR=$1
+   VALUE=$2
+   write_log "Setting ${ATTR} to ${VALUE}"
+   ldapmodify<<EOF
+dn: cn=config
+changetype: modify
+replace: ${ATTR}
+${ATTR}: ${VALUE}
+EOF
 }
 
-cert_created() {
-   write_log "cert created $@"
-}
-
-# Only watch directories & files
-WATCH=()
-for F in "$@"; do
-   if [ -d "${F}" -o -f "${F}" ]; then
-      WATCH+=("${F}")
-   else
-      write_log "Warning: ${F} is not a directory or a file, removing from watch list"
+while sleep 1m; do
+   CA_FILE=get_attr olcTLSCACertificateFile
+   if [ ! -f "${CA_FILE}" ]; then
+      write_log "Certificate CA file missing: ${CA_FILE}"
+      next
    fi
+
+   CRTFILE=get_attr olcTLSCertificateFile
+   if [ ! -f "${CRTFILE}" ]; then
+      write_log "Certificate file missing: ${CRTFILE}"
+      next
+   fi
+
+   KEYFILE=get_attr olcTLSCertificateKeyFile
+   if [ ! -f "${KEYFILE}" ]; then
+      write_log "Certificate key file missing: ${KEYFILE}"
+      next
+   fi
+
+   # check expiry
+   EXPIRY=$(openssl x509 -noout -enddate -in "${CRTFILE}" | cut -d = -f2)
+   CURRENT_EPOCH=$(date +%s)
+   TARGET_EPOCH=$(date -d "${EXPIRY}" +%s)
+   SLEEP_SECONDS=$(( $TARGET_EPOCH - $CURRENT_EPOCH - ${RENEWTIME}))
+
+   write_log "Sleeping until near $EXPIRY ($SLEEP_SECONDS seconds)"
+   sleep $SLEEP_SECONDS
+
+   until openssl x509 -noout -checkend ${RENEWTIME} -in "${CRTFILE}"; do
+      sleep 1m
+   done
+
+   write_log "Certificate has been renewed"
+   set_attr olcTLSCACertificateFile: "${CA_FILE}"
+   set_attr olcTLSCertificateFile: "${CRTFILE}"
+   set_attr olcTLSCertificateKeyFile: "${KEYFILE}"
 done
-
-# Sanity check
-if [ ${#WATCH[@]} -eq 0 ]; then
-   write_log "Please specify a list of directories to watch"
-   exit 1
-fi
-
-sleep 10  # Hack to ensure slapd is running before watching for changed files
-
-write_log "Watching for changes in ${WATCH[*]}"
-while read DIRECTORY EVENT FILE; do
-   case $EVENT in
-      MODIFY*) cert_changed "$DIRECTORY" "$FILE" ;;
-      CREATE*) cert_created "$DIRECTORY" "$FILE" ;;
-      DELETE*) cert_deleted "$DIRECTORY" "$FILE" ;;
-   esac
-done < <(inotifywait -qmre modify,delete,create ${WATCH[*]})
 
 write_log "script exited: rc=$!"

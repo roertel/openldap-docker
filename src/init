@@ -43,9 +43,7 @@ else
    write_log "Skipping initialization; Already configured"
 fi
 
-write_log "Starting config watchers"
-watch_secrets "${SECRETS}" &
-watch_ldif "${LDIFDIR}" &
+write_log "Starting certificate expiration watcher"
 watch_certificates "${CERTDIR}" &
 
 write_log "Starting LDAP server"
