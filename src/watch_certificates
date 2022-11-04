@@ -33,19 +33,19 @@ EOF
 }
 
 while sleep 1m; do
-   CA_FILE=get_attr "olcTLSCACertificateFile"
+   CA_FILE=$(get_attr "olcTLSCACertificateFile")
    if [ ! -f "${CA_FILE}" ]; then
       write_log "Certificate CA file missing: ${CA_FILE}"
       next
    fi
 
-   CRTFILE=get_attr "olcTLSCertificateFile"
+   CRTFILE=$(get_attr "olcTLSCertificateFile")
    if [ ! -f "${CRTFILE}" ]; then
       write_log "Certificate file missing: ${CRTFILE}"
       next
    fi
 
-   KEYFILE=get_attr "olcTLSCertificateKeyFile"
+   KEYFILE=$(get_attr "olcTLSCertificateKeyFile")
    if [ ! -f "${KEYFILE}" ]; then
       write_log "Certificate key file missing: ${KEYFILE}"
       next
