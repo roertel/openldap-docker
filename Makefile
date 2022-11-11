@@ -6,8 +6,8 @@ clean:
 build: export CLUSTER_DOMAIN=cluster.local
 build: export NAMESPACE=default
 build: export CA_URL=step-certificates.system-certificates.svc.cluster.local
-build: export CA_FINGERPRINT=9e2dc74f3fa96bbf51fb5f0b01ed89a277559e8a4bac1763a4afa03cb80c5c38
-build: export SOURCE=ssh://test-git.int.oertelnet.com/openldap-docker
+build: export CA_FINGERPRINT=c0ec43883e69659ac3e79fcfbd8ca158a6f2ba14b6eb22beabab7b3ad1121040
+build: export SOURCE=ssh://test-git.int.oertelnet.com:23231/openldap-docker
 build: export REGISTRY=test-docker-registry.int.oertelnet.com
 build: export CONTAINER=openldap:latest
 build:

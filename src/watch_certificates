@@ -56,7 +56,7 @@ while sleep 1m; do
    TARGET_EPOCH=$(date -d "${EXPIRY}" +%s)
    SLEEP_SECONDS=$(( $TARGET_EPOCH - $CURRENT_EPOCH - ${RENEWTIME}))
 
-   write_log "Sleeping until near $EXPIRY ($SLEEP_SECONDS seconds)"
+   write_log "Waiting until $RENEWTIME seconds of $EXPIRY ($SLEEP_SECONDS seconds) to renew the certificates"
    sleep $SLEEP_SECONDS
 
    until openssl x509 -noout -checkend ${RENEWTIME} -in "${CRTFILE}"; do
