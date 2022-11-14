@@ -1,0 +1,55 @@
+---
+# File will be piped through envsubst
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kaniko-build
+spec:
+  ttlSecondsAfterFinished: 600
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      volumes:
+        - name: certs
+          emptyDir: {}
+        - name: source
+          emptyDir: {}
+      containers:
+        # Need the step-cli container to load certs used
+        # to push the image to the local registry.
+        - name: cert-bootstrapper
+          image: smallstep/step-cli:latest
+          volumeMounts:
+            - name: certs
+              mountPath: /home/step/certs/
+          command:
+            - step
+            - ca 
+            - bootstrap 
+            - --ca-url=https://${CA_URL}/
+            - --fingerprint=${CA_FINGERPRINT} 
+   
+        # Kaniko can't pull from git via ssh, so
+        # we do it here, setting the ssh key first.
+        - name: git
+          image: bitnami/git:latest
+          volumeMounts:
+            - mountPath: /workspace
+              name: source
+          command: ["sh", "-c"]
+          args:
+            - |
+              ssh-keyscan -p 23231 test-git.int.oertelnet.com>/etc/ssh/ssh_known_hosts ;
+              git clone -v ${SOURCE} /workspace
+
+        - name: kaniko
+          image: gcr.io/kaniko-project/executor:latest
+          volumeMounts:
+            - name: source
+              mountPath: /workspace
+            - name: certs
+              mountPath: /kaniko/certs/
+          args:
+            - --destination=${REGISTRY}/${CONTAINER}
+            - --registry-certificate=${REGISTRY}=/kaniko/certs/root_ca.crt
