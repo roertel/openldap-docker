@@ -30,7 +30,7 @@ done; write_log "secrets done"
 
 if [ -z "$(ls -A ${LDAPDIR} 2>/dev/null)" ]; then
    mkdir -p "${LDAPDIR}"
-
+      
    # Load initialization items
    write_log "Loading initialization files..."
    for FILE in "${LDIFDIR}"/init*.ldif; do
