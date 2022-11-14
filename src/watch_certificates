@@ -23,7 +23,7 @@ set_attr() {
    ATTR=$1
    VALUE=$2
    write_log "Setting ${ATTR} to ${VALUE}"
-   ldapmodify<<EOF
+   ldapmodify -cQ<<EOF
 dn: cn=config
 changetype: modify
 replace: ${ATTR}
