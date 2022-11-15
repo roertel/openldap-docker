@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+#
+# Waits until LDAP is running, then executes the 
+# file(s) against the running instance. 
+#
+set -e
+
+LOGNAME=$(basename $0)
+LDAPSASL_MECH=EXTERNAL
+ADMINPW=/ldap/secrets/admin
+
+write_log() {
+   echo "[${LOGNAME}] $@"
+}
+
+load_file() {
+   FILE=$1
+   if [ -f "${FILE}" ]; then
+      write_log "Loading ${FILE}"
+      envsubst<"${FILE}"|ldapmodify -cQ
+   else
+      write_log "Skipping '$1': not a file"
+   fi
+}
+
+write_log "Waiting for LDAP to start"
+while sleep 5s; do
+    ldapsearch -s base -QLLLb 'cn=config' 1.1 1>/dev/null 2>&1 && break
+done
+
+for FILE in "$@"; do
+    load_file "${FILE}"
+done
+
+write_log "script exited: rc=$!"
