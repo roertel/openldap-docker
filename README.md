@@ -2,7 +2,6 @@
 A basic OpenLDAP installation on Debian for use in a K8s cluster
 
 ## Environment
-
 |Name|Default|Description|
 |---|---|---|
 |BASEDIR|/ldap|Base directory for other directories|
