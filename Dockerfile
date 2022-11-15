@@ -16,7 +16,7 @@ LABEL org.label-schema.vcs-ref = ${VCS_REF}
 
 RUN apt-get -yqq update \
  && DEBIAN_FRONTEND=noninteractive apt-get -yqq --no-install-recommends \
-    install slapd=${ldap_version} ldap-utils gettext-base vim-tiny openssl \
+    install slapd=${LDAP_VERSION} ldap-utils gettext-base vim-tiny openssl \
  && rm -rf /var/log/apt /var/log/*.log /var/cache/apt /var/cache/debconf
 
 COPY src/* /usr/local/bin/
