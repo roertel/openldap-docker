@@ -4,6 +4,7 @@
 # file(s) against the running instance. 
 #
 set -e
+$ shopt -s nullglob
 
 LOGNAME=$(basename $0)
 LDAPSASL_MECH=EXTERNAL
