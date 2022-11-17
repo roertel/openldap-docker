@@ -3,14 +3,14 @@ set -e
 shopt -s nullglob  # Fixes a case when a directory is empty
 
 # Set up some dirs, using existing vars if specified
-BASEDIR="${BASEDIR:-/ldap}"              # Base directory
-LDAPDIR="${LDAPDIR:-${BASEDIR}/slapd.d}" # LDAP database directory
-SECRETS="${SECRETS:-${BASEDIR}/secrets}" # Secrets to inject into scripts, TLS, etc
-LDIFDIR="${LDIFDIR:-${BASEDIR}/config}"  # Directory for LDAP DB configuration
-CERTDIR="${CERTDIR:-${BASEDIR}/tls}"     # Directory to watch for changes to certificates
-RUN_DIR="${RUN_DIR:-${BASEDIR}/run}"     # Run dir (pid files, sockets, etc)
-LOGNAME=$(basename $0)
-LDAP_DEBUG="${LDAP_DEBUG:-0}"            # Debug must be set to prevent forking
+export BASEDIR="${BASEDIR:-/ldap}"              # Base directory
+export LDAPDIR="${LDAPDIR:-${BASEDIR}/slapd.d}" # LDAP database directory
+export SECRETS="${SECRETS:-${BASEDIR}/secrets}" # Secrets to inject into scripts, TLS, etc
+export LDIFDIR="${LDIFDIR:-${BASEDIR}/config}"  # Directory for LDAP DB configuration
+export CERTDIR="${CERTDIR:-${BASEDIR}/tls}"     # Directory to watch for changes to certificates
+export RUN_DIR="${RUN_DIR:-${BASEDIR}/run}"     # Run dir (pid files, sockets, etc)
+export LOGNAME=$(basename $0)
+export LDAP_DEBUG="${LDAP_DEBUG:-0}"            # Debug must be set to >= 0 prevent forking
 
 write_log() {
    echo "[${LOGNAME}] $@"
@@ -35,7 +35,7 @@ if [ -z "$(ls -A ${LDAPDIR} 2>/dev/null)" ]; then
    write_log "Loading initialization files..."
    for FILE in "${LDIFDIR}"/init*.ldif; do
       write_log "Loading $FILE"
-      envsubst < "${FILE}" | slapadd -n0 -F "${LDAPDIR}"
+      envsubst < "${FILE}" | slapadd -n0 -F "${LDAPDIR}" -d "${LDAP_DEBUG}"
 
    done; write_log "initialization complete"
 
