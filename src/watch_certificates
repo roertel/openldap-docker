@@ -34,19 +34,19 @@ EOF
 while sleep 1m; do
    CA_FILE=$(get_attr "olcTLSCACertificateFile")
    if [ ! -f "${CA_FILE}" ]; then
-      write_log "Certificate CA file missing: ${CA_FILE}"
+      write_log "Certificate CA file missing: ${CA_FILE}. Checking again in 1 minute."
       continue
    fi
 
    CRTFILE=$(get_attr "olcTLSCertificateFile")
    if [ ! -f "${CRTFILE}" ]; then
-      write_log "Certificate file missing: ${CRTFILE}"
+      write_log "Certificate file missing: ${CRTFILE}. Checking again in 1 minute."
       continue
    fi
 
    KEYFILE=$(get_attr "olcTLSCertificateKeyFile")
    if [ ! -f "${KEYFILE}" ]; then
-      write_log "Certificate key file missing: ${KEYFILE}"
+      write_log "Certificate key file missing: ${KEYFILE}. Checking again in 1 minute."
       continue
    fi
 
@@ -56,10 +56,11 @@ while sleep 1m; do
    TARGET_EPOCH=$(date -d "${EXPIRY}" +%s)
    SLEEP_SECONDS=$(( $TARGET_EPOCH - $CURRENT_EPOCH - ${RENEWTIME}))
 
-   write_log "Waiting until $RENEWTIME seconds of $EXPIRY ($SLEEP_SECONDS seconds) to renew the certificates"
+   write_log "Waiting until $RENEWTIME seconds before $EXPIRY ($SLEEP_SECONDS seconds) to renew the certificates"
    sleep $SLEEP_SECONDS
 
    until openssl x509 -noout -checkend ${RENEWTIME} -in "${CRTFILE}"; do
+      write_log "Waiting 1 minute for server to generate renewed certificate."
       sleep 1m
    done
 

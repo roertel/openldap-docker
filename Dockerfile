@@ -25,11 +25,10 @@ RUN mkdir -p "/ldap" \
  && chown -R openldap:openldap /ldap \
  && chmod 0700 /ldap \
  && chmod +x /usr/local/bin/* \
- && ln -s /usr/local/bin/init /entrypoint \
- && ln -s /usr/local/bin/healthz /healthz \
+ && ln -st / /usr/local/bin/init /usr/local/bin/healthz \
  && echo "done"
 
 ENV HOME /ldap
 USER openldap
 
-ENTRYPOINT ["/entrypoint"]
+ENTRYPOINT ["/init"]

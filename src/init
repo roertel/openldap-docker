@@ -45,7 +45,9 @@ fi
 
 write_log "Starting certificate expiration watcher"
 watch_certificates "${CERTDIR}" &
-watch_config "${LDIFDIR}/config*.ldif" &
+
+write_log "Starting post-startup configurator"
+watch_config "${LDIFDIR}"/config*.ldif &
 
 write_log "Starting LDAP server"
 write_log "Listening on ${LDAPURI}"

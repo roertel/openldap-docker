@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 #
-# Waits until LDAP is running, then executes the 
-# file(s) against the running instance. 
+# Waits until LDAP is running, then executes the
+# file(s) against the running instance. This script
+# will run on every start, regardless of whether
+# it's already been initialized.
 #
 set -e
-$ shopt -s nullglob
 
 LOGNAME=$(basename $0)
 LDAPSASL_MECH=EXTERNAL
@@ -16,11 +17,14 @@ write_log() {
 
 load_file() {
    FILE=$1
-   if [ -f "${FILE}" ]; then
+   if [ -e "${FILE}" ]; then
       write_log "Loading ${FILE}"
-      envsubst<"${FILE}"|ldapmodify -cQ
+      if [ "${LDAP_DEBUG}" -ne "0" ]; then
+         envsubst<"${FILE}"
+      fi
+      envsubst<"${FILE}"|ldapmodify -cvQ
    else
-      write_log "Skipping '$1': not a file"
+      write_log "Skipping '$1': file does not exist"
    fi
 }
 
@@ -29,8 +33,11 @@ while sleep 5s; do
     ldapsearch -s base -QLLLb 'cn=config' 1.1 1>/dev/null 2>&1 && break
 done
 
-for FILE in "$@"; do
-    load_file "${FILE}"
+write_log "LDAP started, processing $@"
+for ARG in "$@"; do
+   for FILE in "${ARG}"; do
+      load_file "${FILE}"
+   done
 done
 
 write_log "script exited: rc=$!"
