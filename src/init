@@ -24,7 +24,7 @@ for FILE in "${SECRETS}"/*; do
    if [ -f "${FILE}" ]; then
       write_log "Reading $FILE"
       BASE=$(basename $FILE)
-      export LDAP_$BASE=$(slappasswd -n -h "{SSHA512}" -o module-load=pw-sha2.la -T $FILE")
+      export LDAP_$BASE=$(slappasswd -n -h "{SSHA512}" -o module-load=pw-sha2.la -T $FILE)
    fi
 done; write_log "secrets done"
 
