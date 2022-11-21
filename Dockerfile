@@ -15,10 +15,9 @@ LABEL org.label-schema.vcs-url = ${VCS_URL}
 LABEL org.label-schema.vcs-ref = ${VCS_REF}
 
 RUN apt-get -yqq update \
- && DEBIAN_FRONTEND=noninteractive apt-get -yqq --no-install-recommends \
-    install slapd=${LDAP_VERSION} ldap-utils gettext-base vim-tiny openssl \
- && rm -rf /var/log/apt /var/log/*.log /var/cache/apt /var/cache/debconf
-
+ && DEBIAN_FRONTEND=noninteractive apt-get -yqq --no-install-recommends install \
+    slapd=${LDAP_VERSION} ldap-utils gettext-base less vim-tiny openssl moreutils \
+ && rm -rf /var/log/apt /var/log/*.log /var/cache/{apt,debconf} /etc/ldap/slapd.d
 COPY src/* /usr/local/bin/
 
 RUN mkdir -p "/ldap" \

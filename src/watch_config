@@ -9,7 +9,6 @@ set -e
 
 LOGNAME=$(basename $0)
 LDAPSASL_MECH=EXTERNAL
-ADMINPW=/ldap/secrets/admin
 
 write_log() {
    echo "[${LOGNAME}] $@"
@@ -20,9 +19,9 @@ load_file() {
    if [ -e "${FILE}" ]; then
       write_log "Loading ${FILE}"
       if [ "${LDAP_DEBUG}" -ne "0" ]; then
-         envsubst<"${FILE}"
+         envsubst<"${FILE}" | ts "[$LOGNAME]"
       fi
-      envsubst<"${FILE}"|ldapmodify -cvQ
+      envsubst<"${FILE}"|ldapmodify -cvQ  2>&1 | ts "[$LOGNAME]"
    else
       write_log "Skipping '$1': file does not exist"
    fi
