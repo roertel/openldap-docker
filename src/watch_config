@@ -6,7 +6,7 @@
 # it's already been initialized.
 #
 set -e
-$ shopt -s nullglob
+shopt -s nullglob
 
 LOGNAME=$(basename $0)
 LDAPSASL_MECH=EXTERNAL
