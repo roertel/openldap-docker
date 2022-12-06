@@ -9,13 +9,8 @@ export SECRETS="${SECRETS:-${BASEDIR}/secrets}" # Secrets to inject into scripts
 export LDIFDIR="${LDIFDIR:-${BASEDIR}/config}"  # Directory for LDAP DB configuration
 export CERTDIR="${CERTDIR:-${BASEDIR}/tls}"     # Directory to watch for changes to certificates
 export RUN_DIR="${RUN_DIR:-${BASEDIR}/run}"     # Run dir (pid files, sockets, etc)
-<<<<<<< HEAD
 export LDAP_DEBUG="${LDAP_DEBUG:-0}"            # Debug must be set to >= 0 prevent forking
-LOGNAME=$(basename $0)
-=======
 export LOGNAME=$(basename $0)
-export LDAP_DEBUG="${LDAP_DEBUG:-0}"            # Debug must be set to >= 0 prevent forking
->>>>>>> origin
 
 write_log() {
    echo "[${LOGNAME}] $@"
